@@ -20,6 +20,11 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk",
   },
+  user3RandomID: {
+    id: "user3RandomID",
+    email: "A@example.com",
+    password: "a",
+  },
 };
 
 //Random String Generator that generates a string with the length of 6
@@ -36,15 +41,29 @@ const generateRandomString = function() {
   return result;
 }
 
-app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
-});
-
 // app.post("/logout", (req, res) => {
 //   res.clearCookie;
 //   res.redirect("/urls");
 // });
+app.get("/login", (req, res) => {
+  res.render("urls_login");
+});
+
+app.post("/login",(req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send("Error");
+  }
+  
+  for(const index in users) {
+    if(users[index].email === email && users[index].password === password) {
+      console.log("Welcome");
+      res.redirect("/urls");
+    }
+  }
+  //Error
+})
 
 app.get("/register", (req, res) => {
   res.render("urls_register");
