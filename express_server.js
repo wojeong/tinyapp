@@ -22,10 +22,23 @@ const generateRandomString = function() {
   }
   return result;
 }
+
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);
   res.redirect("/urls");
 });
+
+// app.post("/logout", (req, res) => {
+//   res.clearCookie;
+//   res.redirect("/urls");
+// });
+
+app.get("/register", (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_register", templateVars);
+});
+
+app.get("/register")
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
@@ -37,14 +50,16 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
-});
-
 app.post("/urls", (req, res) => {
   urlDatabase[generateRandomString()] = req.body.longURL;
   res.redirect("/urls");
 });
+
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+
 
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]};
