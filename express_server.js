@@ -9,6 +9,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 //Random String Generator that generates a string with the length of 6
 const generateRandomString = function() {
   let result = '';
@@ -34,11 +47,26 @@ app.post("/login", (req, res) => {
 // });
 
 app.get("/register", (req, res) => {
-  const templateVars = { urls: urlDatabase };
-  res.render("urls_register", templateVars);
+  res.render("urls_register");
 });
 
-app.get("/register")
+app.post("/register",(req, res) => {
+  const email = req.body.email;
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send("Error");
+  }
+  
+  for (const index in users) {
+    if (users[index].email === email) {
+      return res.status(400).send("Account exists. Please login.");
+    }
+  };
+
+  const userId = generateRandomString();
+  const user = { id: userId, email: req.body.email, password: req.body.password };
+  users[userId] = user;
+  res.redirect("/urls");
+})
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
