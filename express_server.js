@@ -44,6 +44,13 @@ const generateRandomString = function() {
   return result;
 }
 
+const getUserByEmail = function(userEmail) {
+  for (const index in users) {
+    if (users[index].email === userEmail) {
+      return true;
+    }
+  }
+}
 // app.post("/logout", (req, res) => {
 //   res.clearCookie;
 //   res.redirect("/urls");
@@ -53,7 +60,6 @@ const generateRandomString = function() {
 app.get("/login", (req, res) => {
   const userId = req.cookies["user_id"];
   const user = users[userId];
-  
   res.render("urls_login", {user});
 });
 
@@ -78,11 +84,12 @@ app.post("/login",(req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id", req.body.user_id);
   res.redirect("/login");
-  
 });
 
 app.get("/register", (req, res) => {
-  res.render("urls_register");
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+  res.render("urls_register", {user});
 });
 
 app.post("/register",(req, res) => {
@@ -90,15 +97,15 @@ app.post("/register",(req, res) => {
     return res.status(400).send("Email or Password is missing");
   }
   
-  for (const index in users) {
-    if (users[index].email === req.body.email) {
-      return res.status(400).send("The email is in use. Please Log in");
-    }
-  };
+  if (getUserByEmail(req.body.email)) {
+    return res.status(400).send("The email is in use. Please Log in");
+  }
 
+  //registering new user
   const userId = generateRandomString();
   const user = { id: userId, email: req.body.email, password: req.body.password };
   users[userId] = user;
+  res.cookie("user_id",user.id);
   res.redirect("/urls");
 })
 
@@ -120,18 +127,26 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+  if(!user) {
+    res.status(400).redirect("/login");
+  }
+  res.render("urls_new", {user});
 });
 
 
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]};
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user};
+  
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  console.log(req.params.id);
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
