@@ -1,8 +1,11 @@
 const express = require("express");
+const cookieParser = require('cookie-parser')
 const app = express();
 const PORT = 8080; // default port 8080
+
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser())
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -45,39 +48,51 @@ const generateRandomString = function() {
 //   res.clearCookie;
 //   res.redirect("/urls");
 // });
+
+//There's no cookie saved
 app.get("/login", (req, res) => {
-  res.render("urls_login");
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+  
+  res.render("urls_login", {user});
 });
 
 app.post("/login",(req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  
   if (!req.body.email || !req.body.password) {
     return res.status(400).send("Error");
   }
   
   for(const index in users) {
+    
     if(users[index].email === email && users[index].password === password) {
-      console.log("Welcome");
-      res.redirect("/urls");
-    }
+      res.cookie("user_id", users[index].id);
+      res.redirect(`/urls`);
+     }
   }
   //Error
-})
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("user_id", req.body.user_id);
+  res.redirect("/login");
+  
+});
 
 app.get("/register", (req, res) => {
   res.render("urls_register");
 });
 
 app.post("/register",(req, res) => {
-  const email = req.body.email;
   if (!req.body.email || !req.body.password) {
-    return res.status(400).send("Error");
+    return res.status(400).send("Email or Password is missing");
   }
   
   for (const index in users) {
-    if (users[index].email === email) {
-      return res.status(400).send("Account exists. Please login.");
+    if (users[index].email === req.body.email) {
+      return res.status(400).send("The email is in use. Please Log in");
     }
   };
 
@@ -93,7 +108,9 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+  const templateVars = { urls: urlDatabase, user };
   res.render("urls_index", templateVars);
 });
 
