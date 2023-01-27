@@ -52,7 +52,7 @@ const users = {
 };
 
 //GET,POSTS are listed in alphabetical order of actions
-
+//Login
 app.get("/login", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
@@ -65,21 +65,34 @@ app.post("/login",(req, res) => {
   const userAccount = getUserByEmail(email, users);
   
   if (!req.body.email || !req.body.password) {
-    return res.status(400).send("Error");
+    return res
+            .status(400)
+            .send("One or more field is empty.");
+  }
+  
+  if (!userAccount) {
+    return res
+    .status(400)
+    .send("Invalid email.")
   }
 
-  if(userAccount.email === email && bcrpyt.compareSync(password, userAccount.password)) {
+  if (userAccount.email === email && bcrpyt.compareSync(password, userAccount.password)) {
       req.session.user_id = userAccount.id;
-      res.redirect("/urls");
-     }
-     //Error
-  });
+      return res.redirect("/urls");
+  }
 
+  return res
+          .status(400)
+          .send("Email or Password does not match.")
+});
+
+//Logout and clear cookie
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/login");
 });
 
+//Register
 app.get("/register", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
@@ -88,11 +101,11 @@ app.get("/register", (req, res) => {
 
 app.post("/register",(req, res) => {
   if (!req.body.email || !req.body.password) {
-    return res.status(400).send("Email or Password is missing");
+    return res.status(400).send("Email or Password is missing.");
   }
   
   if (getUserByEmail(req.body.email)) {
-    return res.status(400).send("The email is in use. Please Log in");
+    return res.status(400).send("The email is in use.");
   }
 
   //registering new user
@@ -105,34 +118,42 @@ app.post("/register",(req, res) => {
   res.redirect("/urls");
 })
 
+//Directs to longURL based on shortURL
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
   const longURL = urlDatabase[shortURL].longURL;
+  if (!urlDatabase.hasOwnProperty(shortURL))
   if (!longURL) {
-    return res.status(400).send("This short URL has not been created.");
+    return res
+            .status(400)
+            .send("Short URL does not exist");
   }
   res.redirect(longURL);
 });
 
+//Main Page if loged in
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
-  
   if(!user){
-    res.status(400).send("Please Login");
+    return res
+            .status(400)
+            .send("Please login or register to get permission");
   }
+
   const templateVars = { urls: urlsForUser(userId, urlDatabase), user };
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  const shortenURL = generateRandomString();
-  urlDatabase[shortenURL] = { longURL: req.body.longURL,
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = { longURL: req.body.longURL,
                               userID: req.session.user_id                            
   };
   res.redirect("/urls"); 
 });
 
+//Create New shortURL
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
@@ -142,19 +163,22 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", {user});
 });
 
+//View ShortURL
 app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
-  const shortenURL = req.params.id;
-
-  if (!urlDatabase.hasOwnProperty(shortenURL)) {
+  const shortURL = req.params.id;
+  console.log(shortURL);
+  if (!urlDatabase.hasOwnProperty(shortURL)) {
     return res.status(400).send("This URL does not exist.");
   }
+  
   if (!req.session.user_id) {
-    return res.status(400).send("Please login to view this short URL."); 
+    return res.status(400).send("Please login to view this URL."); 
   }
-  if (!urlsForUser(userId).hasOwnProperty(shortenURL)) {
-    return res.status(400).send("You are not authorized to view this link.")
+
+  if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {
+    return res.status(400).send("You don't have permission to view this URL")
   }
   
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user};
@@ -162,11 +186,13 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+//Delete URL
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
 
+//Edit the longURL
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id].longURL = req.body.updatedURL;
   res.redirect("/urls");

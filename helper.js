@@ -6,7 +6,7 @@ const getUserByEmail = function(userEmail, users) {
       return users[index];
     }
   }
-
+  return;
 };
 
 //Helper function that returns URL objects that created by the user
