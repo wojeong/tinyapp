@@ -8,8 +8,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+  i3KoGr: {
+    longURL: "http://naver.com",
+    userID: "aJ48lW",
+  },
 };
 
 const users = {
@@ -42,7 +52,7 @@ const generateRandomString = function() {
     result += allChar.charAt(Math.floor(Math.random() * allChar.length));
   }
   return result;
-}
+};
 
 const getUserByEmail = function(userEmail) {
   for (const index in users) {
@@ -50,11 +60,17 @@ const getUserByEmail = function(userEmail) {
       return true;
     }
   }
-}
-// app.post("/logout", (req, res) => {
-//   res.clearCookie;
-//   res.redirect("/urls");
-// });
+};
+
+const urlsForUser = function(id) {
+  const verifiedURL = {};
+  for (const shortenURL in urlDatabase) {
+    if (urlDatabase[shortenURL].userID === id) {
+      verifiedURL[shortenURL] = urlDatabase[shortenURL];
+    }
+  }
+  return verifiedURL;
+};
 
 //There's no cookie saved
 app.get("/login", (req, res) => {
@@ -110,20 +126,30 @@ app.post("/register",(req, res) => {
 })
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const shortURL = req.params.id;
+  const longURL = urlDatabase[shortURL].longURL;
+  if (!longURL) {
+    return res.status(400).send("This short URL has not been created.");
+  }
   res.redirect(longURL);
 });
 
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
   const user = users[userId];
-  const templateVars = { urls: urlDatabase, user };
+  if(!user){
+    res.status(400).send("Please Login");
+  }
+  const templateVars = { urls: urlsForUser(userId), user };
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  urlDatabase[generateRandomString()] = req.body.longURL;
-  res.redirect("/urls");
+  const shortenURL = generateRandomString();
+  urlDatabase[shortenURL] = { longURL: req.body.longURL,
+                              userID: req.cookies["user_id"]                            
+  };
+  res.redirect("/urls"); 
 });
 
 app.get("/urls/new", (req, res) => {
@@ -135,12 +161,21 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", {user});
 });
 
-
-
 app.get("/urls/:id", (req, res) => {
   const userId = req.cookies["user_id"];
   const user = users[userId];
+  const shortenURL = req.params.id;
 
+  if (!urlDatabase.hasOwnProperty(shortenURL)) {
+    return res.status(400).send("This URL does not exist.");
+  }
+  if (!req.cookies["user_id"]) {
+    return res.status(400).send("Please login to view this short URL."); 
+  }
+  if (!urlsForUser(userId).hasOwnProperty(shortenURL)) {
+    return res.status(400).send("You are not authorized to view this link.")
+  }
+  
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user};
   
   res.render("urls_show", templateVars);
@@ -152,7 +187,7 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.post("/urls/:id/update", (req, res) => {
-  urlDatabase[req.params.id] = req.body.updatedURL;
+  urlDatabase[req.params.id].longURL = req.body.updatedURL;
   res.redirect("/urls");
 });
 
