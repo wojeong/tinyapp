@@ -23,3 +23,10 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 - Install all dependencies (using the `npm install` command).
 - Run the development web server using the `node express_server.js` command.
+
+## Known Issue
+
+- I was able to fix everything, but "/u/:id" function.
+- Originally stored shortURL perfectly redirects to longURL
+- BUT newly created URL crashes the app. 
+- It is exactly the same string but only Orgianlly(urlDatabase) stored URL can be redirected
