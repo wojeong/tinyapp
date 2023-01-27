@@ -1,9 +1,9 @@
 const express = require("express");
 const cookieSession = require('cookie-session');
 const bcrpyt = require("bcryptjs");
-const { getUserByEmail } = require('./helper');
-const { urlsForUser } = require('./helper'); 
-const { generateRandomString } = require('./helper');
+const { getUserByEmail } = require('./helpers');
+const { urlsForUser } = require('./helpers'); 
+const { generateRandomString } = require('./helpers');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -103,8 +103,7 @@ app.post("/register",(req, res) => {
   if (!req.body.email || !req.body.password) {
     return res.status(400).send("Email or Password is missing.");
   }
-  
-  if (getUserByEmail(req.body.email)) {
+  if (getUserByEmail(req.body.email, users)) {
     return res.status(400).send("The email is in use.");
   }
 
@@ -140,7 +139,6 @@ app.get("/urls", (req, res) => {
             .status(400)
             .send("Please login or register to get permission");
   }
-
   const templateVars = { urls: urlsForUser(userId, urlDatabase), user };
   res.render("urls_index", templateVars);
 });
@@ -168,7 +166,6 @@ app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
   const shortURL = req.params.id;
-  console.log(shortURL);
   if (!urlDatabase.hasOwnProperty(shortURL)) {
     return res.status(400).send("This URL does not exist.");
   }
@@ -181,7 +178,7 @@ app.get("/urls/:id", (req, res) => {
     return res.status(400).send("You don't have permission to view this URL")
   }
   
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user};
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user};
   
   res.render("urls_show", templateVars);
 });

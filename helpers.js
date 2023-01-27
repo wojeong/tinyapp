@@ -10,11 +10,11 @@ const getUserByEmail = function(userEmail, users) {
 };
 
 //Helper function that returns URL objects that created by the user
-const urlsForUser = function(id,urlDatabase) {
+const urlsForUser = function(id, urlDatabase) {
   const verifiedURL = {};
-  for (const shortenURL in urlDatabase) {
-    if (urlDatabase[shortenURL].userID === id) {
-      verifiedURL[shortenURL] = urlDatabase[shortenURL];
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      verifiedURL[shortURL] = urlDatabase[shortURL];
     }
   }
   return verifiedURL;
