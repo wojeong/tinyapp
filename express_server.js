@@ -4,6 +4,8 @@ const bcrpyt = require("bcryptjs");
 const { getUserByEmail } = require('./helpers');
 const { urlsForUser } = require('./helpers'); 
 const { generateRandomString } = require('./helpers');
+const { urlDatabase } = require('./database');
+const { users } = require('./database');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -16,40 +18,7 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))
 
-//Database
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-  i3KoGr: {
-    longURL: "http://naver.com",
-    userID: "usereRandomID",
-  },
-};
 
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-  usereRandomID: {
-    id: "usereRandomID",
-    email: "a@a.com",
-    password: bcrpyt.hashSync("a"),
-  },
-  
-};
 
 //GET,POSTS are listed in alphabetical order of actions
 
@@ -69,7 +38,9 @@ app.get("/", (req, res) => {
 app.get("/login", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
-  res.render("urls_login", {user});
+  if(user) {
+    return res.redirect("/urls");
+  } res.render("urls_login", {user});
 });
 
 app.post("/login",(req, res) => {
@@ -109,6 +80,9 @@ app.post("/logout", (req, res) => {
 app.get("/register", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
+  if(user){
+    return res.redirect("/urls");
+  }
   res.render("urls_register", {user});
 });
 
@@ -130,7 +104,7 @@ app.post("/register",(req, res) => {
   res.redirect("/urls");
 })
 
-//Directs to longURL based on shortURL
+//Directs to longURL based on shortURL (done)
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
   const longURL = urlDatabase[shortURL].longURL;
@@ -143,7 +117,7 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-//Main Page if loged in
+//Main Page if loged in (done)
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
@@ -190,14 +164,14 @@ app.get("/urls/:id", (req, res) => {
     return res.status(400).send("This URL does not exist.");
   }
   
-  //Redirect user to login page if the user is not logged in
+  //Send message to user if the user is not logged in
   if (!req.session.user_id) {
-    return res.status(400).redirect("/login")
+    return res.status(400).send("You need to login to veiw the URL")
   }
 
-  //Redirect user to urls page if the user does not own's the URLS
+  //Send message to user if the user does not own's the URLS
   if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {  
-    return res.redirect("/urls")
+    return res.status(400).send("You don't have permission to read this URL")
   }
   
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user};
@@ -205,7 +179,7 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-//Delete URL
+//Delete URL (done)
 app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
@@ -230,7 +204,7 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-//Edit the longURL
+//Edit the longURL (done)
 app.post("/urls/:id/update", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
