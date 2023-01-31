@@ -151,9 +151,6 @@ app.post("/urls", (req, res) => {
     return res.status(400).send("Please login to create this URL."); 
   }
 
-  if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {
-    return res.status(400).send("You don't have permission to create an URL")
-  }
   urlDatabase[shortURL] = { longURL: req.body.longURL,
                               userID: req.session.user_id                            
   };
@@ -179,12 +176,14 @@ app.get("/urls/:id", (req, res) => {
     return res.status(400).send("This URL does not exist.");
   }
   
+  //Redirect user to login page if the user is not logged in
   if (!req.session.user_id) {
-    return res.status(400).send("Please login to view this URL."); 
+    return res.status(400).redirect("/login")
   }
 
-  if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {
-    return res.status(400).send("You don't have permission to view this URL")
+  //Redirect user to urls page if the user does not own's the page
+  if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {  
+    return res.redirect("/urls")
   }
   
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user};
