@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieSession = require('cookie-session');
+const popup = require('node-popup');
 const bcrpyt = require("bcryptjs");
 const { getUserByEmail } = require('./helpers');
 const { urlsForUser } = require('./helpers'); 
@@ -167,7 +168,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", {user});
 });
 
-//View ShortURL
+//View ShortURL (done)
 app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
@@ -181,7 +182,7 @@ app.get("/urls/:id", (req, res) => {
     return res.status(400).redirect("/login")
   }
 
-  //Redirect user to urls page if the user does not own's the page
+  //Redirect user to urls page if the user does not own's the URLS
   if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {  
     return res.redirect("/urls")
   }
@@ -194,11 +195,20 @@ app.get("/urls/:id", (req, res) => {
 //Delete URL
 app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.user_id;
+  const shortURL = req.params.id;
   const user = users[userId];
+  
+  //If such the url that user tried to delete doesn't exist send this message
+  if (!urlDatabase.hasOwnProperty(shortURL)) {
+    return res.status(400).send("This URL does not exist.");
+  }
+
+  //Redirect the user to login page to delete if not logged in
   if (!req.session.user_id) {
     return res.status(400).send("Please login to delete the URL."); 
   }
 
+  //Redirect the user to urls page if they do not have permission to delete the url
   if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {
     return res.status(400).send("You don't have permission to remove this URL")
   }
