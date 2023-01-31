@@ -232,6 +232,25 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //Edit the longURL
 app.post("/urls/:id/update", (req, res) => {
+  const userId = req.session.user_id;
+  const shortURL = req.params.id;
+  const user = users[userId];
+  
+  //If such the url that user tried to modify doesn't exist send this message
+  if (!urlDatabase.hasOwnProperty(shortURL)) {
+    return res.status(400).send("This URL does not exist.");
+  }
+
+  //User must be logged in to modify
+  if (!req.session.user_id) {
+    return res.status(400).send("Please login to update the URL."); 
+  }
+
+  //User must own the url to modify
+  if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {
+    return res.status(400).send("You don't have permission to update this URL")
+  }
+  
   urlDatabase[req.params.id].longURL = req.body.updatedURL;
   res.redirect("/urls");
 });
