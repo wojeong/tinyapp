@@ -53,6 +53,7 @@ const users = {
 
 //GET,POSTS are listed in alphabetical order of actions
 
+//Main page of the URL. Redirect the user to proper page based on login status
 app.get("/", (req, res) => {
   const userId = req.session.user_id;
   const user = users[userId];
@@ -159,6 +160,7 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   const userId = req.session.user_id;
   const user = users[userId];
+  
   if (!req.session.user_id) {
     return res.status(400).send("Please login to create this URL."); 
   }
@@ -166,7 +168,7 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = { longURL: req.body.longURL,
                               userID: req.session.user_id                            
   };
-  res.redirect("/urls"); 
+  res.redirect(`urls/${shortURL}`); 
 });
 
 //Create New shortURL
