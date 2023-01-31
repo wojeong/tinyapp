@@ -1,6 +1,5 @@
 const express = require("express");
 const cookieSession = require('cookie-session');
-const popup = require('node-popup');
 const bcrpyt = require("bcryptjs");
 const { getUserByEmail } = require('./helpers');
 const { urlsForUser } = require('./helpers'); 
@@ -53,6 +52,18 @@ const users = {
 };
 
 //GET,POSTS are listed in alphabetical order of actions
+
+app.get("/", (req, res) => {
+  const userId = req.session.user_id;
+  const user = users[userId];
+  if(!user){
+    return res.redirect("/login");
+  } else {
+    return res.redirect("/urls");
+  } 
+});
+
+
 //Login
 app.get("/login", (req, res) => {
   const userId = req.session.user_id;
