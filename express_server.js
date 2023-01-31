@@ -145,6 +145,15 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
+  const userId = req.session.user_id;
+  const user = users[userId];
+  if (!req.session.user_id) {
+    return res.status(400).send("Please login to create this URL."); 
+  }
+
+  if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {
+    return res.status(400).send("You don't have permission to create an URL")
+  }
   urlDatabase[shortURL] = { longURL: req.body.longURL,
                               userID: req.session.user_id                            
   };
@@ -185,6 +194,16 @@ app.get("/urls/:id", (req, res) => {
 
 //Delete URL
 app.post("/urls/:id/delete", (req, res) => {
+  const userId = req.session.user_id;
+  const user = users[userId];
+  if (!req.session.user_id) {
+    return res.status(400).send("Please login to delete the URL."); 
+  }
+
+  if (!urlsForUser(userId, urlDatabase).hasOwnProperty(shortURL)) {
+    return res.status(400).send("You don't have permission to remove this URL")
+  }
+  
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
@@ -195,28 +214,6 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect("/urls");
 });
 
-//Some basic examples
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
-app.get("/set", (req, res) => {
-  const a = 1;
-  res.send(`a = ${a}`);
- });
- 
- app.get("/fetch", (req, res) => {
-  res.send(`a = ${a}`);
- });
